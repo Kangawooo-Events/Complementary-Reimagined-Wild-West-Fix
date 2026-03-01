@@ -16,24 +16,7 @@ in vec3 normal;
 
 in vec4 glColor;
 
-in vec4 corner0;
-in vec4 corner1;
-in vec2 texCoord0;
-in vec2 texCoord1;
-
-const vec3 HAND_MODEL_SCALE = vec3(0.471, 0.515, 1.515);
-
-const vec3 modelScaleF = 0.5 * HAND_MODEL_SCALE;
-const vec3 modelScaleS = modelScaleF + (0.25 / 8.0) * HAND_MODEL_SCALE;
-const vec3 hRefF = vec3(length(modelScaleF.xz), length(modelScaleF.yz), length(modelScaleF.xy));
-const vec3 hRefS = vec3(length(modelScaleS.xz), length(modelScaleS.yz), length(modelScaleS.xy));
-
-bool testDim(float h, float hRef) {
-    return abs(h - hRef) < 0.001;
-}
-bool testDims(float h, vec3 hRef) {
-    return testDim(h, hRef.x) || testDim(h, hRef.y) || testDim(h, hRef.z);
-}
+#include "/lib/wildWest/fragment/define.glsl"
 
 #if defined GENERATED_NORMALS || defined COATED_TEXTURES || defined POM || defined IPBR && defined IS_IRIS
     in vec2 signMidCoordPos;
@@ -110,24 +93,8 @@ float shadowTime = shadowTimeVar2 * shadowTimeVar2;
 
 //Program//
 void main() {
-    vec4 color = texture2D(tex, texCoord);
 
-    vec2 finalTexCoord = texCoord;
-    vec4 texColor = texture2D(tex, texCoord);
-    ivec2 size = textureSize(tex, 0);
-    vec3 diff = corner1.xyz / corner1.w - corner0.xyz / corner0.w;
-    float h = length(diff);
-
-    
-    if (size.x == 64 && size.y == 64) 
-    {
-        if (abs(h - hRefF.x) < 0.0001 || abs(h - hRefF.y) < 0.0001 || abs(h - hRefF.z) < 0.0001 || abs(h - hRefS.x) < 0.0001 || abs(h - hRefS.y) < 0.0001 || abs(h - hRefS.z) < 0.0001) 
-        {
-            finalTexCoord = texCoord1;
-        }
-    }
-    
-    color = texture2D(tex, finalTexCoord);
+     #include "/lib/wildWest/fragment/draw.glsl"
 
     float smoothnessD = 0.0, materialMask = OSIEBCA * 254.0; // No SSAO, No TAA, Reduce Reflection
     vec2 lmCoordM = lmCoord;
@@ -222,10 +189,6 @@ out vec3 normal;
 
 out vec4 glColor;
 
-out vec4 corner0;
-out vec4 corner1;
-out vec2 texCoord1;
-
 #if defined GENERATED_NORMALS || defined COATED_TEXTURES || defined POM || defined IPBR && defined IS_IRIS
     out vec2 signMidCoordPos;
     flat out vec2 absMidCoordPos;
@@ -251,44 +214,7 @@ out vec2 texCoord1;
     attribute vec4 at_tangent;
 #endif
 
-const ivec4 armUV[] = ivec4[](
-    ivec4(40, 52, 36, 64), // left 
-    ivec4(36, 64, 32, 52), // bottom 
-    ivec4(44, 64, 48, 52), // right
-    ivec4(44, 52, 40, 48), // top
-    ivec4(40, 52, 44, 64), // east
-    ivec4(36, 52, 40, 48)  // top
-);
-
-const ivec4 slimArmUV[] = ivec4[](
-    ivec4(39, 52, 36, 64),
-    ivec4(43, 64, 46, 52),
-    ivec4(36, 64, 32, 52),
-    ivec4(42, 52, 39, 48),
-    ivec4(39, 52, 43, 64),
-    ivec4(36, 52, 39, 48)
-);
-
-const bool armRotateUV[] = bool[](
-    false, false, true, true, true, true
-);
-
-const bool armFlipUV[] = bool[](
-    false, false, true, false, true, false
-);
-
-const bool armMirrorUV[] = bool[](
-    true, false, false, false, false, false
-);
-
-bool isSlim() {
-    vec4 samp1 = texture2D(tex, vec2(54.0 / 64.0, 20.0 / 64.0));
-    vec4 samp2 = texture2D(tex, vec2(55.0 / 64.0, 20.0 / 64.0));
-    return samp1.a == 0.0 ||
-        (((samp1.r + samp1.g + samp1.b) == 0.0) &&
-         ((samp2.r + samp2.g + samp2.b) == 0.0) &&
-         samp1.a == 1.0 && samp2.a == 1.0);
-}
+#include "/lib/wildWest/vertex/define.glsl"
 
 //Common Variables//
 
@@ -342,43 +268,7 @@ void main() {
         #include "/lib/misc/handSway.glsl"
     #endif
 
-    int part = gl_VertexID / 48 % 2;
-    int face = (gl_VertexID % 48) / 4;
-    int vertex = gl_VertexID % 4;
-    bool slim = isSlim();
-
-    ivec4 uvData = slim ? slimArmUV[face % 6] : armUV[face % 6];
-    bool rotate = armRotateUV[face % 6];
-    bool flip = armFlipUV[face % 6];
-    bool mirror = armMirrorUV[face % 6];
-
-    if (part == 0) {
-        if (face >= 6) uvData.xz += 16;
-    } else {
-        uvData += ivec4(8, -32, 8, -32);
-        if (face >= 6) uvData.yw += 16;
-    }
-
-    ivec2 uv;
-    switch (vertex) {
-        case 0: uv = uvData.xy; break;
-        case 1: uv = rotate ? uvData.xw : uvData.zy; break;
-        case 2: uv = uvData.zw; break;
-        case 3: uv = rotate ? uvData.zy : uvData.xw; break;
-    }
-    if (flip) {
-        uv = uvData.xy + uvData.zw - uv;
-    }
-    if (mirror) {
-        uv.x = uvData.x + uvData.z - uv.x;
-    }
-
-    texCoord1 = vec2(uv) / 64.0;
-
-    vec4 pos = gl_ModelViewMatrix * gl_Vertex;
-    corner0 = corner1 = vec4(0.0);
-    if (gl_VertexID % 4 == 0) corner0 = pos;
-    if (gl_VertexID % 4 == 2) corner1 = pos;
+    #include "/lib/wildWest/vertex/draw.glsl"
 }
 
 #endif
