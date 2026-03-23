@@ -150,6 +150,11 @@ void main() {
         }
     #endif
 
+    if(glColor.rgb == vec3(1.0))
+    {
+        discard;
+    }
+
     DoLighting(color, shadowMult, playerPos, viewPos, lViewPos, geoNormal, normalM, dither,
                worldGeoNormal, lmCoordM, noSmoothLighting, false, true,
                false, 0, 0.0, 1.0, emission);
