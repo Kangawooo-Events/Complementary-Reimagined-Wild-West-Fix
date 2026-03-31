@@ -225,6 +225,12 @@ if (entityId < 50128) { // 50000 to 50128
         }
     }
 } else { // 50128 to 50256
+    if (entityId == 50128) { // Spectral Arrow
+        lmCoordM.x *= 0.7;
+
+        emission = 20.0 * color.g;
+        color.r *= 1.3;
+    }
     if (entityId < 50192) { // 50128 to 50192
         if (entityId < 50160) { // 50128 to 50160
             if (entityId < 50144) { // 50128 to 50144
