@@ -90,6 +90,15 @@ float shadowTime = shadowTimeVar2 * shadowTimeVar2;
     #include "/lib/misc/colorCodedPrograms.glsl"
 #endif
 
+const vec3 WARNING_DETECTION_COLOR = vec3(205.0, 12.0, 51.0);
+const vec3 MAX_COLOR = vec3(255.0, 255.0, 255.0);
+
+bool colorAreTheSame(vec3 realColor, vec3 colorIn255)
+{
+    vec3 color = colorIn255/MAX_COLOR;
+    return (abs(realColor.r - color.r) < 0.01 && abs(realColor.g - color.g) < 0.01 && abs(realColor.b - color.b) < 0.01);
+}
+
 //Program//
 void main() {
     vec4 color = texture2D(tex, texCoord);
@@ -97,6 +106,11 @@ void main() {
         vec3 colorP = color.rgb;
     #endif
     color *= glColor;
+
+    if(colorAreTheSame(glColor.rgb,WARNING_DETECTION_COLOR ))
+    {
+        discard;
+    }
 
     float smoothnessD = 0.0, materialMask = OSIEBCA * 254.0; // No SSAO, No TAA, Reduce Reflection
     vec2 lmCoordM = lmCoord;
