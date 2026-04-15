@@ -86,6 +86,7 @@ void main() {
     vec3 normalM = normal, geoNormal = normal, shadowMult = vec3(1.0);
     vec3 worldGeoNormal = normalize(ViewToPlayer(geoNormal * 10000.0));
     #if defined IPBR && defined IPBR_PARTICLE_FEATURES
+        
         // We don't want to detect particles from the block atlas
         #if MC_VERSION >= 12000
             float atlasCheck = 1100.0; // I think texture atlas got bigger in newer mc
@@ -119,6 +120,10 @@ void main() {
                 color.a *= 0.5;
                 materialMask = OSIEBCA * 251.0; // No SSAO, Reduce Reflection
             } else if (max(abs(colorP.r - colorP.b), abs(colorP.b - colorP.g)) < 0.001) { // Grayscale Particles
+                if(glColor.rgb == vec3(1.0))
+                {
+                    discard;
+                }
                 float dotColor = dot(color.rgb, color.rgb);
                 if (dotColor > 0.25 && color.g < 0.5 && (color.b > color.r * 1.1 && color.r > 0.3 || color.r > (color.g + color.b) * 3.0)) {
                     // Ender Particle, Crying Obsidian Particle, Redstone Particle
@@ -148,12 +153,10 @@ void main() {
                 emission = 5.0;
             }
         }
+
     #endif
 
-    if(glColor.rgb == vec3(1.0))
-    {
-        discard;
-    }
+    
 
     DoLighting(color, shadowMult, playerPos, viewPos, lViewPos, geoNormal, normalM, dither,
                worldGeoNormal, lmCoordM, noSmoothLighting, false, true,
